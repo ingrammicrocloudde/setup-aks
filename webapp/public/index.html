@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AKS Learn Assistant</title>
+    <style>
+      :root {
+        --bg: #f7f6f2;
+        --card: #ffffff;
+        --text: #1f2a37;
+        --muted: #6b7280;
+        --accent: #0f766e;
+        --accent-strong: #115e59;
+        --border: #d1d5db;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at top left, #d1fae5, var(--bg));
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+
+      .app {
+        width: 100%;
+        max-width: 860px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.8rem;
+      }
+
+      p {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 1rem;
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 0 18px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--accent-strong);
+      }
+
+      pre {
+        margin-top: 16px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        min-height: 180px;
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 700px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          height: 44px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>AKS Learn Assistant</h1>
+      <p>Stelle einfache Fragen zu Azure Kubernetes Service. Antworten kommen vom Microsoft Learn MCP Server.</p>
+
+      <div class="row">
+        <input id="question" placeholder="z. B. Was ist der Unterschied zwischen AKS Free, Standard und Premium?" />
+        <button id="askBtn">Fragen</button>
+      </div>
+
+      <div class="hint">Beispiel: "Wie aktiviere ich den Cluster Autoscaler in AKS?"</div>
+      <pre id="answer">Noch keine Antwort.</pre>
+    </main>
+
+    <script>
+      const askBtn = document.getElementById('askBtn');
+      const questionInput = document.getElementById('question');
+      const answer = document.getElementById('answer');
+
+      async function ask() {
+        const question = questionInput.value.trim();
+        if (!question) {
+          answer.textContent = 'Bitte eine Frage eingeben.';
+          return;
+        }
+
+        answer.textContent = 'Lade Antwort vom MCP Server...';
+        askBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+          });
+
+          const payload = await response.json();
+
+          if (!response.ok) {
+            answer.textContent = `Fehler: ${payload.error || 'Unbekannter Fehler'}\n${payload.details || ''}`;
+            return;
+          }
+
+          answer.textContent = payload.answer || 'Keine Textantwort erhalten.';
+        } catch (error) {
+          answer.textContent = `Netzwerkfehler: ${error.message}`;
+        } finally {
+          askBtn.disabled = false;
+        }
+      }
+
+      askBtn.addEventListener('click', ask);
+      questionInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          ask();
+        }
+      });
+    </script>
+  </body>
+</html>

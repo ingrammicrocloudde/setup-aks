@@ -3,6 +3,16 @@
 Dieses Repository stellt ein Azure Kubernetes Service (AKS) Cluster im **DEV-Tier** bereit.  
 Die Konfiguration ist auf Entwicklungsumgebungen ausgelegt: günstiger VM-Typ, einzelner Node, kostenloser AKS-SKU-Tier.
 
+## NOOBS Quickstart (3 Schritte)
+
+1. Klicke auf den ersten Deploy-Button und deploye das AKS-Cluster mit den Standardwerten.
+2. Klicke auf den zweiten Deploy-Button für die WebApp.
+3. Gib dort diese beiden Pflichtwerte ein:
+  - `aksClusterName`: derselbe Name wie aus Schritt 1 (Standard: `aks-dev`)
+  - `webappImage`: dein echtes Container-Image (Beispiel: `myacr.azurecr.io/aks-learn-webapp:v1`)
+
+Danach wird die WebApp automatisch per GitOps in das vorhandene AKS ausgerollt.
+
 ---
 
 ## Deploy to Azure
@@ -10,6 +20,13 @@ Die Konfiguration ist auf Entwicklungsumgebungen ausgelegt: günstiger VM-Typ, e
 Klicke auf den Button, um das Cluster direkt im Azure Portal bereitzustellen:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.json)
+
+Optional: WebApp (GitOps/Flux) auf ein bereits vorhandenes AKS-Cluster deployen:
+
+[![Deploy WebApp to existing AKS](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.webapp.json)
+
+Hinweis für NOOBS: Dieser Button fragt direkt das gewünschte Container-Image ab (z. B. `myacr.azurecr.io/aks-learn-webapp:v1`). Ein manuelles Editieren von `webapp/k8s/deployment.yaml` ist dafür nicht nötig.
+Wichtig: Bei `aksClusterName` den gleichen AKS-Namen wie im ersten Button verwenden (Standard: `aks-dev`).
 
 [![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.json)
 
@@ -114,6 +131,27 @@ az aks get-credentials \
   --resource-group rg-aks-dev \
   --name aks-dev \
   --overwrite-existing
+```
+
+---
+
+## Optionale WebApp auf bestehendem AKS
+
+Im Ordner `webapp` befindet sich eine einfache Q&A-WebApp, die Fragen zu AKS beantwortet und dafür einen Microsoft Learn MCP Server nutzt.
+
+- Ziel: bestehendes AKS-Cluster weiterverwenden und nur App-Workload deployen
+- Details zu Build/Run/Deploy: siehe `webapp/README.md`
+- Empfohlen: Deployment über den WebApp-Button oben (einfachster Weg)
+
+Deployment der WebApp-GitOps-Verknüpfung per CLI:
+
+(Optional, eher für Fortgeschrittene. Für NOOBS bitte den WebApp-Button verwenden.)
+
+```bash
+az deployment group create \
+  --resource-group rg-aks-dev \
+  --template-file azuredeploy.webapp.bicep \
+  --parameters @azuredeploy.webapp.parameters.dev.json
 ```
 
 ---
