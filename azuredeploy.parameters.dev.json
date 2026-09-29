@@ -5,9 +5,6 @@
     "clusterName": {
       "value": "aks-dev"
     },
-    "kubernetesVersion": {
-      "value": "1.30"
-    },
     "nodeCount": {
       "value": 1
     },

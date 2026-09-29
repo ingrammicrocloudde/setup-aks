@@ -21,13 +21,6 @@
         "description": "Azure region for the AKS cluster."
       }
     },
-    "kubernetesVersion": {
-      "type": "string",
-      "defaultValue": "1.30",
-      "metadata": {
-        "description": "Kubernetes version."
-      }
-    },
     "nodeCount": {
       "type": "int",
       "defaultValue": 1,
@@ -138,7 +131,6 @@
         "type": "SystemAssigned"
       },
       "properties": {
-        "kubernetesVersion": "[parameters('kubernetesVersion')]",
         "dnsPrefix": "[parameters('clusterName')]",
         "nodeResourceGroup": "[variables('nodeResourceGroup')]",
         "enableRBAC": "[parameters('enableRbac')]",
