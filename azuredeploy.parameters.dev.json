@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "clusterName": {
+      "value": "aks-dev"
+    },
+    "kubernetesVersion": {
+      "value": "1.30"
+    },
+    "nodeCount": {
+      "value": 1
+    },
+    "nodeVmSize": {
+      "value": "Standard_B2ms"
+    },
+    "osDiskSizeGB": {
+      "value": 32
+    },
+    "enableAutoScaling": {
+      "value": false
+    },
+    "networkPlugin": {
+      "value": "kubenet"
+    },
+    "enableRbac": {
+      "value": true
+    },
+    "enableAzureMonitor": {
+      "value": false
+    },
+    "tags": {
+      "value": {
+        "Environment": "dev",
+        "ManagedBy": "ARM",
+        "CostCenter": "dev-team"
+      }
+    }
+  }
+}

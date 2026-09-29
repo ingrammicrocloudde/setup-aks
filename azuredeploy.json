@@ -1,0 +1,191 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys an Azure Kubernetes Service (AKS) cluster in DEV tier."
+  },
+  "parameters": {
+    "clusterName": {
+      "type": "string",
+      "defaultValue": "aks-dev",
+      "minLength": 3,
+      "maxLength": 63,
+      "metadata": {
+        "description": "Name of the AKS cluster."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for the AKS cluster."
+      }
+    },
+    "kubernetesVersion": {
+      "type": "string",
+      "defaultValue": "1.30",
+      "metadata": {
+        "description": "Kubernetes version."
+      }
+    },
+    "nodeCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 5,
+      "metadata": {
+        "description": "Number of nodes in the system node pool."
+      }
+    },
+    "nodeVmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2ms",
+      "allowedValues": [
+        "Standard_B2ms",
+        "Standard_B4ms",
+        "Standard_D2s_v3",
+        "Standard_D4s_v3"
+      ],
+      "metadata": {
+        "description": "VM size for the node pool."
+      }
+    },
+    "osDiskSizeGB": {
+      "type": "int",
+      "defaultValue": 32,
+      "minValue": 32,
+      "maxValue": 128,
+      "metadata": {
+        "description": "OS disk size in GB."
+      }
+    },
+    "enableAutoScaling": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable cluster autoscaler."
+      }
+    },
+    "minNodeCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 3,
+      "metadata": {
+        "description": "Minimum node count (used when autoscaling is enabled)."
+      }
+    },
+    "maxNodeCount": {
+      "type": "int",
+      "defaultValue": 3,
+      "minValue": 1,
+      "maxValue": 5,
+      "metadata": {
+        "description": "Maximum node count (used when autoscaling is enabled)."
+      }
+    },
+    "networkPlugin": {
+      "type": "string",
+      "defaultValue": "kubenet",
+      "allowedValues": [
+        "kubenet",
+        "azure"
+      ],
+      "metadata": {
+        "description": "Network plugin for the cluster."
+      }
+    },
+    "enableRbac": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Kubernetes RBAC."
+      }
+    },
+    "enableAzureMonitor": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Azure Monitor / Container Insights."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "dev",
+        "ManagedBy": "ARM"
+      },
+      "metadata": {
+        "description": "Tags to apply to all resources."
+      }
+    }
+  },
+  "variables": {
+    "nodeResourceGroup": "[concat('MC_', resourceGroup().name, '_', parameters('clusterName'), '_', parameters('location'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerService/managedClusters",
+      "apiVersion": "2024-02-01",
+      "name": "[parameters('clusterName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Base",
+        "tier": "Free"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "kubernetesVersion": "[parameters('kubernetesVersion')]",
+        "dnsPrefix": "[parameters('clusterName')]",
+        "nodeResourceGroup": "[variables('nodeResourceGroup')]",
+        "enableRBAC": "[parameters('enableRbac')]",
+        "agentPoolProfiles": [
+          {
+            "name": "systempool",
+            "count": "[parameters('nodeCount')]",
+            "vmSize": "[parameters('nodeVmSize')]",
+            "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
+            "osDiskType": "Managed",
+            "osType": "Linux",
+            "mode": "System",
+            "enableAutoScaling": "[parameters('enableAutoScaling')]",
+            "minCount": "[if(parameters('enableAutoScaling'), parameters('minNodeCount'), null())]",
+            "maxCount": "[if(parameters('enableAutoScaling'), parameters('maxNodeCount'), null())]",
+            "availabilityZones": [],
+            "nodeTaints": []
+          }
+        ],
+        "networkProfile": {
+          "networkPlugin": "[parameters('networkPlugin')]",
+          "loadBalancerSku": "standard"
+        },
+        "addonProfiles": {
+          "omsagent": {
+            "enabled": "[parameters('enableAzureMonitor')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "clusterName": {
+      "type": "string",
+      "value": "[parameters('clusterName')]"
+    },
+    "clusterResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+    },
+    "controlPlaneFqdn": {
+      "type": "string",
+      "value": "[reference(parameters('clusterName')).fqdn]"
+    },
+    "kubeletIdentityObjectId": {
+      "type": "string",
+      "value": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]"
+    }
+  }
+}
