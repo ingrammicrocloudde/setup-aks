@@ -21,7 +21,6 @@ Klicke auf den Button, um das Cluster direkt im Azure Portal bereitzustellen:
 |---|---|---|
 | `clusterName` | `aks-dev` | Name des AKS-Clusters |
 | `location` | *(Resource-Group-Region)* | Azure-Region |
-| `kubernetesVersion` | `1.30` | Kubernetes-Version |
 | `nodeCount` | `1` | Anzahl der Nodes |
 | `nodeVmSize` | `Standard_B2ms` | VM-Größe |
 | `osDiskSizeGB` | `32` | OS-Disk-Größe in GB |
@@ -31,6 +30,8 @@ Klicke auf den Button, um das Cluster direkt im Azure Portal bereitzustellen:
 | `networkPlugin` | `kubenet` | Netzwerk-Plugin (`kubenet` oder `azure`) |
 | `enableRbac` | `true` | Kubernetes RBAC aktivieren |
 | `enableAzureMonitor` | `false` | Container Insights aktivieren |
+
+Die Kubernetes-Version wird nicht fest vorgegeben: AKS wählt beim Erstellen eine in der gewählten Region unterstützte Standardversion. Für ein bereits vorhandenes Cluster mit einer nicht mehr unterstützten Version ist stattdessen ein Upgrade nötig; prüfe die verfügbaren Versionen mit `az aks get-versions --location <region>` und die Upgrade-Möglichkeiten mit `az aks get-upgrades --resource-group <resource-group> --name <cluster-name>`.
 
 ---
 
