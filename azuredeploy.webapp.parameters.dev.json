@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "aksClusterName": {
+      "value": "aks-dev"
+    },
+    "fluxConfigurationName": {
+      "value": "aks-learn-webapp"
+    },
+    "kubernetesNamespace": {
+      "value": "webapp"
+    },
+    "gitRepositoryUrl": {
+      "value": "https://github.com/ingrammicrocloudde/setup-aks"
+    },
+    "gitRepositoryBranch": {
+      "value": "main"
+    },
+    "kustomizationPath": {
+      "value": "./webapp/k8s"
+    },
+    "webappImage": {
+      "value": "ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest"
+    }
+  }
+}

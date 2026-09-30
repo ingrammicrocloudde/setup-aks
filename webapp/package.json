@@ -1,0 +1,17 @@
+{
+  "name": "aks-learn-mcp-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Simple web app answering AKS questions via Microsoft Learn MCP Server",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "express": "^4.19.2"
+  }
+}
