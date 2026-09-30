@@ -32,6 +32,9 @@ param sourceSyncIntervalSeconds int = 120
 @minValue(60)
 param kustomizationSyncIntervalSeconds int = 120
 
+@description('Maximum time to wait for Flux reconciliation (ISO 8601 duration, for example PT30M).')
+param reconciliationWaitDuration string = 'PT30M'
+
 resource aks 'Microsoft.ContainerService/managedClusters@2024-05-01' existing = {
   name: aksClusterName
 }
@@ -67,6 +70,7 @@ resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-0
       }
     }
     waitForReconciliation: true
+    reconciliationWaitDuration: reconciliationWaitDuration
   }
 }
 

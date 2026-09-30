@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.38.33.27573",
-      "templateHash": "14493912201453613272"
+      "version": "0.47.16.16243",
+      "templateHash": "16811495527368337821"
     }
   },
   "parameters": {
@@ -74,13 +74,20 @@
       "metadata": {
         "description": "Sync interval for kustomization reconciliation (seconds)."
       }
+    },
+    "reconciliationWaitDuration": {
+      "type": "string",
+      "defaultValue": "PT30M",
+      "metadata": {
+        "description": "Maximum time to wait for Flux reconciliation (ISO 8601 duration, for example PT30M)."
+      }
     }
   },
   "resources": [
     {
       "type": "Microsoft.KubernetesConfiguration/fluxConfigurations",
       "apiVersion": "2023-05-01",
-      "scope": "[format('Microsoft.ContainerService/managedClusters/{0}', parameters('aksClusterName'))]",
+      "scope": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]",
       "name": "[parameters('fluxConfigurationName')]",
       "properties": {
         "scope": "cluster",
@@ -109,7 +116,8 @@
             "timeoutInSeconds": 120
           }
         },
-        "waitForReconciliation": true
+        "waitForReconciliation": true,
+        "reconciliationWaitDuration": "[parameters('reconciliationWaitDuration')]"
       }
     }
   ],
