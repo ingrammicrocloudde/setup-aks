@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "9392535587168959665"
+      "templateHash": "1765050071455237013"
     }
   },
   "parameters": {
@@ -181,6 +181,13 @@
         "description": "Sync interval for kustomization reconciliation (seconds)."
       }
     },
+    "reconciliationWaitDuration": {
+      "type": "string",
+      "defaultValue": "PT30M",
+      "metadata": {
+        "description": "How long to wait for flux reconciliation to complete (ISO 8601 duration)."
+      }
+    },
     "tags": {
       "type": "object",
       "defaultValue": {
@@ -275,7 +282,8 @@
             "timeoutInSeconds": 120
           }
         },
-        "waitForReconciliation": true
+        "waitForReconciliation": true,
+        "reconciliationWaitDuration": "[parameters('reconciliationWaitDuration')]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]",

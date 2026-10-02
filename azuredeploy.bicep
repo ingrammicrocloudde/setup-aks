@@ -88,6 +88,9 @@ param sourceSyncIntervalSeconds int = 120
 @minValue(60)
 param kustomizationSyncIntervalSeconds int = 120
 
+@description('How long to wait for flux reconciliation to complete (ISO 8601 duration).')
+param reconciliationWaitDuration string = 'PT30M'
+
 @description('Tags to apply to all resources.')
 param tags object = {
   Environment: 'dev'
@@ -181,6 +184,7 @@ resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-0
       }
     }
     waitForReconciliation: true
+    reconciliationWaitDuration: reconciliationWaitDuration
   }
   dependsOn: [
     fluxExtension
