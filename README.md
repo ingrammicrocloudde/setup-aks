@@ -36,6 +36,37 @@ falls die WebApp auf ein bereits bestehendes AKS-Cluster ausgerollt werden soll.
 
 ---
 
+## Architektur (Kubernetes-Überblick)
+
+Vereinfachte Darstellung des Clusters: Eingehender Traffic erreicht über den Ingress
+den Service, der die Anfragen auf die Pods des Deployments im Namespace `webapp` verteilt.
+
+```mermaid
+flowchart TB
+    user([Benutzer]) --> ingress
+
+    subgraph cluster[AKS Cluster]
+        subgraph ns[Namespace: webapp]
+            ingress[Ingress<br/>aks-learn-webapp]
+            service[Service<br/>aks-learn-webapp :80]
+            deploy[Deployment<br/>aks-learn-webapp]
+            pod1[Pod<br/>webapp :3000]
+            pod2[Pod<br/>webapp :3000]
+
+            ingress --> service
+            service --> pod1
+            service --> pod2
+            deploy -. verwaltet .-> pod1
+            deploy -. verwaltet .-> pod2
+        end
+    end
+
+    pod1 --> mcp([Microsoft Learn<br/>MCP Server])
+    pod2 --> mcp
+```
+
+---
+
 ## Parameter
 
 | Parameter | Standard | Beschreibung |
