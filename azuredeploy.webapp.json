@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.44.1.10279",
-      "templateHash": "15135360529344818330"
+      "version": "0.47.16.16243",
+      "templateHash": "16811495527368337821"
     }
   },
   "parameters": {
@@ -81,6 +81,13 @@
       "metadata": {
         "description": "Sync interval for kustomization reconciliation (seconds)."
       }
+    },
+    "reconciliationWaitDuration": {
+      "type": "string",
+      "defaultValue": "PT30M",
+      "metadata": {
+        "description": "Maximum time to wait for Flux reconciliation (ISO 8601 duration, for example PT30M)."
+      }
     }
   },
   "resources": [
@@ -117,7 +124,8 @@
             "timeoutInSeconds": 120
           }
         },
-        "waitForReconciliation": true
+        "waitForReconciliation": true,
+        "reconciliationWaitDuration": "[parameters('reconciliationWaitDuration')]"
       }
     }
   ],
