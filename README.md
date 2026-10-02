@@ -179,11 +179,44 @@ Im Ordner `webapp` befindet sich eine einfache Q&A-WebApp, die Fragen zu AKS bea
 
 - Standardweg: Die WebApp wird bereits vom Haupt-Deploy-Button zusammen mit dem AKS-Cluster ausgerollt (`deployWebApp = true`).
 - Diese separate Vorlage ist nur nötig, wenn die WebApp auf ein **bereits bestehendes** AKS-Cluster ausgerollt werden soll.
-- Details zu Build/Run/Deploy: siehe `webapp/README.md`
 
-Deployment der WebApp-GitOps-Verknüpfung per CLI auf ein bestehendes Cluster:
+### Ist das ein valides Szenario?
 
-(Optional, eher für Fortgeschrittene.)
+Ja. Das ist ein valides und typisches Szenario:
+
+- Die bestehende AKS-Infrastruktur wird weiterverwendet.
+- Die WebApp läuft als normaler Workload im Cluster.
+- Fachwissen kommt über einen MCP Server (hier: Microsoft Learn) statt harter Wissens-Logik in der App.
+
+### Funktionsweise (kurz)
+
+- Browser sendet Frage an die WebApp (`POST /api/ask`).
+- Die WebApp ruft ein Tool des Microsoft Learn MCP Servers auf.
+- Das Tool-Ergebnis wird als Antwort zurückgegeben.
+
+### Lokaler Start
+
+```bash
+cd webapp
+npm install
+set MCP_SERVER_URL=https://<dein-mcp-endpoint>
+npm start
+```
+
+Dann im Browser öffnen: `http://localhost:3000`
+
+### Container bauen
+
+```bash
+cd webapp
+docker build -t aks-learn-webapp:local .
+```
+
+### Deployment per GitOps-Verknüpfung (empfohlen)
+
+Deployment der WebApp-GitOps-Verknüpfung per CLI auf ein bestehendes Cluster. Container-Image und
+MCP-Endpoint werden als Parameter übernommen und automatisch per GitOps in das Deployment
+eingesetzt. Ein manuelles Anlegen eines Kubernetes-Secrets ist nicht nötig.
 
 ```bash
 az deployment group create \
@@ -191,6 +224,50 @@ az deployment group create \
   --template-file azuredeploy.webapp.bicep \
   --parameters @azuredeploy.webapp.parameters.dev.json
 ```
+
+### Manuelles Deployment (Fortgeschrittene)
+
+Die Manifeste nutzen die Platzhalter `${WEBAPP_IMAGE}` und `${MCP_SERVER_URL}`, die beim
+GitOps-Rollout durch Flux ersetzt werden. Bei manuellem `kubectl apply` müssen diese Platzhalter
+vorher ersetzt werden.
+
+1. Auf AKS-Kontext wechseln:
+
+```bash
+az aks get-credentials --resource-group <rg> --name <aks-name> --overwrite-existing
+```
+
+2. Container Image pushen (z. B. nach ACR oder GHCR).
+3. Manifeste mit ersetzten Platzhaltern deployen:
+
+```bash
+export WEBAPP_IMAGE="ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest"
+export MCP_SERVER_URL="https://learn.microsoft.com/api/mcp"
+envsubst < webapp/k8s/deployment.yaml | kubectl apply -f -
+kubectl apply -f webapp/k8s/service.yaml
+kubectl apply -f webapp/k8s/ingress.yaml
+```
+
+4. Ingress prüfen:
+
+```bash
+kubectl get ingress aks-learn-webapp -n webapp
+```
+
+5. Falls noch nicht vorhanden: NGINX Ingress Controller im Cluster installieren.
+
+### Wichtige Umgebungsvariablen
+
+- `MCP_SERVER_URL` (Pflicht): URL des Microsoft Learn MCP Servers (Standard: `https://learn.microsoft.com/api/mcp`)
+- `MCP_AUTH_TOKEN` (optional): Bearer Token für geschützte MCP Endpoints
+- `MCP_TOOL_NAME` (optional): Expliziter Tool-Name, falls Autowahl nicht passt
+- `MCP_TOOL_QUERY_PARAM` (optional, default `query`): Feldname für die Frage
+
+### Hinweise
+
+- Je nach MCP Server kann der Tool-Name abweichen; ggf. `MCP_TOOL_NAME` setzen.
+- Für produktiven Betrieb: Ingress, TLS, WAF, Rate Limits und Observability ergänzen.
+- Das Ingress-Manifest nutzt standardmäßig `ingressClassName: nginx` und den Host `aks-learn-webapp.local`.
 
 ---
 
