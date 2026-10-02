@@ -8,6 +8,9 @@ param enableAutoScaling = false
 param networkPlugin = 'kubenet'
 param enableRbac = true
 param enableAzureMonitor = false
+param deployWebApp = true
+param webappImage = 'ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest'
+param mcpServerUrl = 'https://learn.microsoft.com/api/mcp'
 param tags = {
   Environment: 'dev'
   ManagedBy: 'ARM'

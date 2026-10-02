@@ -24,16 +24,7 @@ spec:
         - name: PORT
           value: "3000"
         - name: MCP_SERVER_URL
-          valueFrom:
-            secretKeyRef:
-              name: aks-learn-webapp-secrets
-              key: MCP_SERVER_URL
-        - name: MCP_AUTH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: aks-learn-webapp-secrets
-              key: MCP_AUTH_TOKEN
-              optional: true
+          value: "${MCP_SERVER_URL}"
         - name: MCP_TOOL_NAME
           value: ""
         - name: MCP_TOOL_QUERY_PARAM

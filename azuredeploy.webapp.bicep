@@ -24,6 +24,9 @@ param kustomizationPath string = './webapp/k8s'
 @minLength(10)
 param webappImage string
 
+@description('Microsoft Learn MCP Server endpoint used by the WebApp.')
+param mcpServerUrl string = 'https://learn.microsoft.com/api/mcp'
+
 @description('Sync interval for the Git source (seconds).')
 @minValue(60)
 param sourceSyncIntervalSeconds int = 120
@@ -62,6 +65,7 @@ resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-0
         postBuild: {
           substitute: {
             WEBAPP_IMAGE: webappImage
+            MCP_SERVER_URL: mcpServerUrl
           }
         }
         syncIntervalInSeconds: kustomizationSyncIntervalSeconds
@@ -75,4 +79,4 @@ resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-0
 }
 
 output fluxConfigurationResourceId string = fluxConfig.id
-output nextStep string = 'Create secret aks-learn-webapp-secrets with MCP_SERVER_URL, then wait for GitOps reconciliation to complete.'
+output nextStep string = 'Wait for GitOps reconciliation to complete, then access the WebApp via the configured ingress.'

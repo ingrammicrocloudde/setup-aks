@@ -3,32 +3,36 @@
 Dieses Repository stellt ein Azure Kubernetes Service (AKS) Cluster im **DEV-Tier** bereit.  
 Die Konfiguration ist auf Entwicklungsumgebungen ausgelegt: günstiger VM-Typ, einzelner Node, kostenloser AKS-SKU-Tier.
 
-## NOOBS Quickstart (3 Schritte)
+## NOOBS Quickstart (1 Schritt)
 
-1. Klicke auf den ersten Deploy-Button und deploye das AKS-Cluster mit den Standardwerten.
-2. Klicke auf den zweiten Deploy-Button für die WebApp.
-3. Gib dort diese beiden Pflichtwerte ein:
-  - `aksClusterName`: derselbe Name wie aus Schritt 1 (Standard: `aks-dev`)
-  - `webappImage`: dein echtes Container-Image (Beispiel: `myacr.azurecr.io/aks-learn-webapp:v1`)
+1. Klicke auf den Deploy-Button und starte das Deployment mit den Standardwerten.
 
-Danach wird die WebApp automatisch per GitOps in das vorhandene AKS ausgerollt.
+Das war's: In **einem** Deployment wird sowohl das AKS-Cluster erstellt als auch die WebApp
+(die den Microsoft Learn MCP Server nutzt) automatisch per GitOps in das Cluster ausgerollt.
+
+Standardmäßig wird das vorgefertigte, öffentliche Container-Image
+`ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest` verwendet und der MCP-Endpoint ist auf
+`https://learn.microsoft.com/api/mcp` voreingestellt – es ist keine weitere Eingabe nötig.
+
+Optional kannst du im Portal unter den Parametern ein eigenes `webappImage` angeben oder mit
+`deployWebApp = false` nur das AKS-Cluster ohne WebApp bereitstellen.
 
 ---
 
 ## Deploy to Azure
 
-Klicke auf den Button, um das Cluster direkt im Azure Portal bereitzustellen:
+Klicke auf den Button, um AKS-Cluster **und** WebApp direkt im Azure Portal bereitzustellen:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.json)
 
-Optional: WebApp (GitOps/Flux) auf ein bereits vorhandenes AKS-Cluster deployen:
-
-[![Deploy WebApp to existing AKS](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.webapp.json)
-
-Hinweis für NOOBS: Dieser Button fragt direkt das gewünschte Container-Image ab (z. B. `myacr.azurecr.io/aks-learn-webapp:v1`). Ein manuelles Editieren von `webapp/k8s/deployment.yaml` ist dafür nicht nötig.
-Wichtig: Bei `aksClusterName` den gleichen AKS-Namen wie im ersten Button verwenden (Standard: `aks-dev`).
-
 [![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fingrammicrocloudde%2Fsetup-aks%2Fmain%2Fazuredeploy.json)
+
+> Hinweis: Das Deployment installiert automatisch die Flux-(GitOps-)Extension auf dem Cluster
+> und wartet, bis die WebApp erfolgreich reconciled wurde. Es ist kein manuelles Anlegen eines
+> Kubernetes-Secrets und kein Editieren von `webapp/k8s/deployment.yaml` erforderlich.
+
+Die separate WebApp-Vorlage (`azuredeploy.webapp.json`) bleibt für Fortgeschrittene erhalten,
+falls die WebApp auf ein bereits bestehendes AKS-Cluster ausgerollt werden soll.
 
 ---
 
@@ -47,6 +51,9 @@ Wichtig: Bei `aksClusterName` den gleichen AKS-Namen wie im ersten Button verwen
 | `networkPlugin` | `kubenet` | Netzwerk-Plugin (`kubenet` oder `azure`) |
 | `enableRbac` | `true` | Kubernetes RBAC aktivieren |
 | `enableAzureMonitor` | `false` | Container Insights aktivieren |
+| `deployWebApp` | `true` | WebApp (Microsoft Learn MCP) im selben Deployment per GitOps ausrollen |
+| `webappImage` | `ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest` | Container-Image der WebApp |
+| `mcpServerUrl` | `https://learn.microsoft.com/api/mcp` | Endpoint des Microsoft Learn MCP Servers |
 
 Die Kubernetes-Version wird nicht fest vorgegeben: AKS wählt beim Erstellen eine in der gewählten Region unterstützte Standardversion. Für ein bereits vorhandenes Cluster mit einer nicht mehr unterstützten Version ist stattdessen ein Upgrade nötig; prüfe die verfügbaren Versionen mit `az aks get-versions --location <region>` und die Upgrade-Möglichkeiten mit `az aks get-upgrades --resource-group <resource-group> --name <cluster-name>`.
 
@@ -139,13 +146,13 @@ az aks get-credentials \
 
 Im Ordner `webapp` befindet sich eine einfache Q&A-WebApp, die Fragen zu AKS beantwortet und dafür einen Microsoft Learn MCP Server nutzt.
 
-- Ziel: bestehendes AKS-Cluster weiterverwenden und nur App-Workload deployen
+- Standardweg: Die WebApp wird bereits vom Haupt-Deploy-Button zusammen mit dem AKS-Cluster ausgerollt (`deployWebApp = true`).
+- Diese separate Vorlage ist nur nötig, wenn die WebApp auf ein **bereits bestehendes** AKS-Cluster ausgerollt werden soll.
 - Details zu Build/Run/Deploy: siehe `webapp/README.md`
-- Empfohlen: Deployment über den WebApp-Button oben (einfachster Weg)
 
-Deployment der WebApp-GitOps-Verknüpfung per CLI:
+Deployment der WebApp-GitOps-Verknüpfung per CLI auf ein bestehendes Cluster:
 
-(Optional, eher für Fortgeschrittene. Für NOOBS bitte den WebApp-Button verwenden.)
+(Optional, eher für Fortgeschrittene.)
 
 ```bash
 az deployment group create \
