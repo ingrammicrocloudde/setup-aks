@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.38.33.27573",
-      "templateHash": "14493912201453613272"
+      "version": "0.44.1.10279",
+      "templateHash": "15135360529344818330"
     }
   },
   "parameters": {
@@ -59,6 +59,13 @@
         "description": "Required container image for deployment. Examples: myacr.azurecr.io/aks-learn-webapp:v1 or ghcr.io/my-org/aks-learn-webapp:latest"
       }
     },
+    "mcpServerUrl": {
+      "type": "string",
+      "defaultValue": "https://learn.microsoft.com/api/mcp",
+      "metadata": {
+        "description": "Microsoft Learn MCP Server endpoint used by the WebApp."
+      }
+    },
     "sourceSyncIntervalSeconds": {
       "type": "int",
       "defaultValue": 120,
@@ -80,7 +87,7 @@
     {
       "type": "Microsoft.KubernetesConfiguration/fluxConfigurations",
       "apiVersion": "2023-05-01",
-      "scope": "[format('Microsoft.ContainerService/managedClusters/{0}', parameters('aksClusterName'))]",
+      "scope": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]",
       "name": "[parameters('fluxConfigurationName')]",
       "properties": {
         "scope": "cluster",
@@ -101,7 +108,8 @@
             "force": false,
             "postBuild": {
               "substitute": {
-                "WEBAPP_IMAGE": "[parameters('webappImage')]"
+                "WEBAPP_IMAGE": "[parameters('webappImage')]",
+                "MCP_SERVER_URL": "[parameters('mcpServerUrl')]"
               }
             },
             "syncIntervalInSeconds": "[parameters('kustomizationSyncIntervalSeconds')]",
@@ -120,7 +128,7 @@
     },
     "nextStep": {
       "type": "string",
-      "value": "Create secret aks-learn-webapp-secrets with MCP_SERVER_URL, then wait for GitOps reconciliation to complete."
+      "value": "Wait for GitOps reconciliation to complete, then access the WebApp via the configured ingress."
     }
   }
 }

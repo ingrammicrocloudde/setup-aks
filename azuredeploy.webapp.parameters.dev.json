@@ -22,6 +22,9 @@
     },
     "webappImage": {
       "value": "ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest"
+    },
+    "mcpServerUrl": {
+      "value": "https://learn.microsoft.com/api/mcp"
     }
   }
 }

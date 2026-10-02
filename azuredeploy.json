@@ -2,7 +2,11 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploys an Azure Kubernetes Service (AKS) cluster in DEV tier."
+    "_generator": {
+      "name": "bicep",
+      "version": "0.44.1.10279",
+      "templateHash": "9392535587168959665"
+    }
   },
   "parameters": {
     "clusterName": {
@@ -102,6 +106,81 @@
         "description": "Enable Azure Monitor / Container Insights."
       }
     },
+    "deployWebApp": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy the AKS Learn WebApp (Microsoft Learn MCP) into the cluster via GitOps in the same deployment."
+      }
+    },
+    "webappImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest",
+      "minLength": 10,
+      "metadata": {
+        "description": "Container image for the WebApp. Keep default to use the prebuilt public image."
+      }
+    },
+    "mcpServerUrl": {
+      "type": "string",
+      "defaultValue": "https://learn.microsoft.com/api/mcp",
+      "metadata": {
+        "description": "Microsoft Learn MCP Server endpoint used by the WebApp."
+      }
+    },
+    "fluxConfigurationName": {
+      "type": "string",
+      "defaultValue": "aks-learn-webapp",
+      "minLength": 3,
+      "maxLength": 63,
+      "metadata": {
+        "description": "Internal name for the GitOps (Flux) configuration object."
+      }
+    },
+    "kubernetesNamespace": {
+      "type": "string",
+      "defaultValue": "webapp",
+      "metadata": {
+        "description": "Kubernetes namespace where the WebApp will be deployed."
+      }
+    },
+    "gitRepositoryUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/ingrammicrocloudde/setup-aks",
+      "metadata": {
+        "description": "Git repository URL containing the Kubernetes manifests."
+      }
+    },
+    "gitRepositoryBranch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "Git branch to track."
+      }
+    },
+    "kustomizationPath": {
+      "type": "string",
+      "defaultValue": "./webapp/k8s",
+      "metadata": {
+        "description": "Repo path with Kubernetes manifests."
+      }
+    },
+    "sourceSyncIntervalSeconds": {
+      "type": "int",
+      "defaultValue": 120,
+      "minValue": 60,
+      "metadata": {
+        "description": "Sync interval for the Git source (seconds)."
+      }
+    },
+    "kustomizationSyncIntervalSeconds": {
+      "type": "int",
+      "defaultValue": 120,
+      "minValue": 60,
+      "metadata": {
+        "description": "Sync interval for kustomization reconciliation (seconds)."
+      }
+    },
     "tags": {
       "type": "object",
       "defaultValue": {
@@ -114,7 +193,7 @@
     }
   },
   "variables": {
-    "nodeResourceGroup": "[concat('MC_', resourceGroup().name, '_', parameters('clusterName'), '_', parameters('location'))]"
+    "nodeResourceGroup": "[format('MC_{0}_{1}_{2}', resourceGroup().name, parameters('clusterName'), parameters('location'))]"
   },
   "resources": [
     {
@@ -135,20 +214,7 @@
         "nodeResourceGroup": "[variables('nodeResourceGroup')]",
         "enableRBAC": "[parameters('enableRbac')]",
         "agentPoolProfiles": [
-          {
-            "name": "systempool",
-            "count": "[parameters('nodeCount')]",
-            "vmSize": "[parameters('nodeVmSize')]",
-            "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
-            "osDiskType": "Managed",
-            "osType": "Linux",
-            "mode": "System",
-            "enableAutoScaling": "[parameters('enableAutoScaling')]",
-            "minCount": "[if(parameters('enableAutoScaling'), parameters('minNodeCount'), null())]",
-            "maxCount": "[if(parameters('enableAutoScaling'), parameters('maxNodeCount'), null())]",
-            "availabilityZones": [],
-            "nodeTaints": []
-          }
+          "[union(createObject('name', 'systempool', 'count', parameters('nodeCount'), 'vmSize', parameters('nodeVmSize'), 'osDiskSizeGB', parameters('osDiskSizeGB'), 'osDiskType', 'Managed', 'osType', 'Linux', 'mode', 'System', 'enableAutoScaling', parameters('enableAutoScaling'), 'availabilityZones', createArray(), 'nodeTaints', createArray()), if(parameters('enableAutoScaling'), createObject('minCount', parameters('minNodeCount'), 'maxCount', parameters('maxNodeCount')), createObject()))]"
         ],
         "networkProfile": {
           "networkPlugin": "[parameters('networkPlugin')]",
@@ -160,6 +226,61 @@
           }
         }
       }
+    },
+    {
+      "condition": "[parameters('deployWebApp')]",
+      "type": "Microsoft.KubernetesConfiguration/extensions",
+      "apiVersion": "2023-05-01",
+      "scope": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]",
+      "name": "flux",
+      "properties": {
+        "extensionType": "microsoft.flux",
+        "autoUpgradeMinorVersion": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployWebApp')]",
+      "type": "Microsoft.KubernetesConfiguration/fluxConfigurations",
+      "apiVersion": "2023-05-01",
+      "scope": "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]",
+      "name": "[parameters('fluxConfigurationName')]",
+      "properties": {
+        "scope": "cluster",
+        "namespace": "[parameters('kubernetesNamespace')]",
+        "sourceKind": "GitRepository",
+        "gitRepository": {
+          "url": "[parameters('gitRepositoryUrl')]",
+          "repositoryRef": {
+            "branch": "[parameters('gitRepositoryBranch')]"
+          },
+          "syncIntervalInSeconds": "[parameters('sourceSyncIntervalSeconds')]",
+          "timeoutInSeconds": 60
+        },
+        "kustomizations": {
+          "webapp": {
+            "path": "[parameters('kustomizationPath')]",
+            "prune": true,
+            "force": false,
+            "postBuild": {
+              "substitute": {
+                "WEBAPP_IMAGE": "[parameters('webappImage')]",
+                "MCP_SERVER_URL": "[parameters('mcpServerUrl')]"
+              }
+            },
+            "syncIntervalInSeconds": "[parameters('kustomizationSyncIntervalSeconds')]",
+            "retryIntervalInSeconds": 60,
+            "timeoutInSeconds": 120
+          }
+        },
+        "waitForReconciliation": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), 'Microsoft.KubernetesConfiguration/extensions', 'flux')]"
+      ]
     }
   ],
   "outputs": {
@@ -173,11 +294,19 @@
     },
     "controlPlaneFqdn": {
       "type": "string",
-      "value": "[reference(parameters('clusterName')).fqdn]"
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), '2024-02-01').fqdn]"
     },
     "kubeletIdentityObjectId": {
       "type": "string",
-      "value": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]"
+      "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), '2024-02-01').identityProfile.kubeletidentity.objectId]"
+    },
+    "webAppDeployed": {
+      "type": "bool",
+      "value": "[parameters('deployWebApp')]"
+    },
+    "fluxConfigurationResourceId": {
+      "type": "string",
+      "value": "[if(parameters('deployWebApp'), extensionResourceId(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName')), 'Microsoft.KubernetesConfiguration/fluxConfigurations', parameters('fluxConfigurationName')), '')]"
     }
   }
 }

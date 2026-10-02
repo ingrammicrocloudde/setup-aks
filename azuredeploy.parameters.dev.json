@@ -26,6 +26,15 @@
     "enableAzureMonitor": {
       "value": false
     },
+    "deployWebApp": {
+      "value": true
+    },
+    "webappImage": {
+      "value": "ghcr.io/ingrammicrocloudde/aks-learn-webapp:latest"
+    },
+    "mcpServerUrl": {
+      "value": "https://learn.microsoft.com/api/mcp"
+    },
     "tags": {
       "value": {
         "Environment": "dev",
